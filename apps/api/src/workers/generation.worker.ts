@@ -15,7 +15,7 @@ async function updateProgress(assignmentId: string, progress: number, status: "g
 export async function startGenerationWorker() {
   await connectMongo();
 
-  const worker = new Worker<GenerationJobData>(
+  const worker = new Worker<GenerationJobData, void, "generate-paper">(
     "question-generation",
     async (job) => {
       const { assignmentId } = job.data;

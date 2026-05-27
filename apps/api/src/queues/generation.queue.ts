@@ -2,7 +2,7 @@ import { Queue } from "bullmq";
 import { redisConnection } from "../config/redis.js";
 import type { GenerationJobData } from "../types.js";
 
-export const generationQueue = new Queue<GenerationJobData>("question-generation", {
+export const generationQueue = new Queue<GenerationJobData, void, "generate-paper">("question-generation", {
   connection: redisConnection,
   defaultJobOptions: {
     attempts: 2,
