@@ -6,5 +6,6 @@ dist
 .DS_Store
 coverage
 *.log
+*.tsbuildinfo
 uploads
 generated-pdfs
