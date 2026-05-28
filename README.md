@@ -4,6 +4,13 @@ VedaAI Exam Builder is a full-stack assessment creation app built for the VedaAI
 
 The main idea was to avoid rendering raw AI text. The backend turns the teacher's inputs into a structured prompt, normalizes the generated result into sections/questions/marks/difficulty, stores it, and then notifies the frontend through WebSockets.
 
+## Live Demo
+
+Frontend Deployment (Vercel): https://web-two-kappa-68hp1z8c9i.vercel.app
+
+Note: The deployed version currently hosts the frontend interface.
+The complete backend workflow (Express API, BullMQ workers, Redis queue, WebSocket updates, and MongoDB integration) is fully available in the repository and supported in local setup.
+
 ## What Works
 
 - Assignment creation form with validation for required fields and positive marks/counts
