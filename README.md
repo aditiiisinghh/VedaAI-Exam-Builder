@@ -1,52 +1,110 @@
-# VedaAI Assessment Creator
+# VedaAI Exam Builder
 
-A full-stack AI assessment creator for teachers. The app lets a teacher create an assignment blueprint, queues AI question-paper generation in the backend, stores the result, and streams real-time progress back to the UI.
+VedaAI Exam Builder is a full-stack assessment creation app built for the VedaAI hiring assignment. I kept the product close to the provided Figma flow: a teacher creates an assignment blueprint, the backend queues the generation work, and the final paper is shown in a clean exam-paper layout with PDF export.
 
-## What Is Built
+The main idea was to avoid rendering raw AI text. The backend turns the teacher's inputs into a structured prompt, normalizes the generated result into sections/questions/marks/difficulty, stores it, and then notifies the frontend through WebSockets.
 
-- Next.js + TypeScript frontend inspired by the provided VedaAI Figma screens.
-- Redux Toolkit for assignment and generation state.
-- Express + TypeScript API.
-- MongoDB for assignments and generated papers.
-- Redis + BullMQ for background generation jobs.
-- WebSocket updates for live generation status.
-- Structured AI output parsing instead of rendering raw LLM text.
-- PDF download for the generated question paper.
-- Mock generation fallback when `OPENAI_API_KEY` is not present, so the project can still be reviewed locally.
+## What Works
+
+- Assignment creation form with validation for required fields and positive marks/counts
+- Question type configuration with totals for questions and marks
+- Optional file/text material input
+- MongoDB persistence for assignments and generated papers
+- Redis + BullMQ background generation queue
+- WebSocket updates for queued/generating/completed states
+- Structured paper preview with student details, sections, difficulty labels, marks, and answer key
+- PDF download from the generated paper view
+- Mock generator fallback when no `OPENAI_API_KEY` is provided
+
+## Tech Stack
+
+**Frontend**
+
+- Next.js App Router
+- TypeScript
+- Redux Toolkit
+- Plain CSS/global styling
+- jsPDF
+
+**Backend**
+
+- Node.js + Express
+- TypeScript
+- MongoDB + Mongoose
+- Redis + BullMQ
+- WebSocket server
+- Zod validation
+- OpenAI SDK with local mock fallback
 
 ## Architecture
 
 ```mermaid
 flowchart LR
   A["Teacher fills assignment form"] --> B["Next.js frontend"]
-  B --> C["POST /api/assignments"]
-  C --> D["MongoDB stores assignment"]
-  C --> E["BullMQ adds generation job"]
-  E --> F["Worker builds structured prompt"]
-  F --> G["LLM or mock generator"]
-  G --> H["Validated paper object"]
-  H --> I["MongoDB stores generated result"]
-  I --> J["WebSocket progress/completed event"]
+  B --> C["Express API"]
+  C --> D["MongoDB assignment record"]
+  C --> E["BullMQ job in Redis"]
+  E --> F["Generation worker"]
+  F --> G["Prompt builder + generator"]
+  G --> H["Structured paper object"]
+  H --> I["MongoDB generated result"]
+  I --> J["WebSocket update"]
   J --> B
 ```
+
+## Project Flow
+
+1. The teacher enters assignment details, question types, marks, and instructions.
+2. The frontend validates the form and sends the assignment to the API.
+3. The API validates again with Zod and stores the assignment as `queued`.
+4. A BullMQ job is added to Redis.
+5. The worker builds a structured prompt and generates a paper.
+6. The paper is saved as a structured object, not raw model text.
+7. The WebSocket layer sends progress/completion updates to the frontend.
+8. The teacher views the paper and can download it as a PDF.
+
+## Folder Structure
+
+```text
+apps/
+  web/
+    src/app/              Next.js routes and global styles
+    src/components/       UI components for the dashboard and paper view
+    src/lib/              API helpers, types, and PDF export
+    src/store/            Redux Toolkit setup
+
+  api/
+    src/config/           Environment, MongoDB, and Redis config
+    src/models/           Mongoose assignment model
+    src/queues/           BullMQ queue setup
+    src/routes/           Express routes
+    src/services/         Prompt building, validation, generation logic
+    src/sockets/          WebSocket broadcast helper
+    src/workers/          Background generation worker
+```
+
+## Key Files
+
+- `apps/web/src/components/AssignmentForm.tsx` - assignment creation form and validation
+- `apps/web/src/components/PaperPreview.tsx` - live status, paper preview, regenerate, PDF export
+- `apps/web/src/store/assignmentsSlice.ts` - Redux state for assignments
+- `apps/api/src/routes/assignments.ts` - REST endpoints and queue enqueueing
+- `apps/api/src/workers/generation.worker.ts` - BullMQ worker
+- `apps/api/src/services/promptBuilder.ts` - converts teacher input into a structured prompt
+- `apps/api/src/services/questionGenerator.ts` - OpenAI generation plus local mock fallback
+- `apps/api/src/sockets/hub.ts` - assignment-specific WebSocket updates
 
 ## Local Setup
 
 ```bash
+git clone https://github.com/aditiiisinghh/VedaAI-Exam-Builder.git
+cd VedaAI-Exam-Builder
 npm install
-cp .env.example .env
-docker compose up -d
-npm run dev
 ```
 
-Frontend: `http://localhost:3000`  
-Backend: `http://localhost:4000`
+Create a `.env` file in the root:
 
-If you do not add an `OPENAI_API_KEY`, the backend uses a deterministic mock generator. That is intentional for easy local review.
-
-## Environment Variables
-
-```bash
+```env
 MONGODB_URI=mongodb://127.0.0.1:27017/vedaai-assessment
 REDIS_URL=redis://127.0.0.1:6379
 OPENAI_API_KEY=
@@ -55,49 +113,70 @@ NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_WS_URL=ws://localhost:4000
 ```
 
-## Important Files
+Start MongoDB and Redis:
 
-- `apps/web/src/components/AssignmentForm.tsx` - form validation, file upload, question blueprint.
-- `apps/web/src/components/PaperPreview.tsx` - WebSocket status handling, structured paper view, PDF export.
-- `apps/web/src/store/assignmentsSlice.ts` - Redux state for assignments.
-- `apps/api/src/routes/assignments.ts` - API endpoints and job enqueueing.
-- `apps/api/src/workers/generation.worker.ts` - BullMQ worker that generates and stores papers.
-- `apps/api/src/services/promptBuilder.ts` - converts teacher input into a structured AI prompt.
-- `apps/api/src/services/questionGenerator.ts` - LLM call plus safe mock fallback.
-- `apps/api/src/sockets/hub.ts` - assignment-specific WebSocket broadcast.
+```bash
+docker compose up -d
+```
 
-## Interview Walkthrough
+Run both apps:
 
-The project follows the requested flow:
+```bash
+npm run dev
+```
 
-1. The teacher creates an assignment from the frontend.
-2. The frontend validates required fields and positive marks/counts.
-3. The backend validates again with Zod.
-4. The assignment is stored in MongoDB with `queued` status.
-5. A BullMQ job is added to Redis.
-6. The worker picks the job, builds a structured prompt, calls the generator, and normalizes the result into sections/questions.
-7. The generated paper is saved back to MongoDB.
-8. The WebSocket layer notifies the selected frontend client.
-9. The UI renders a real exam-paper layout instead of raw model text.
+Frontend runs on `http://localhost:3000` and backend runs on `http://localhost:4000`.
 
-## Deployment Notes
+## Notes on AI Generation
 
-Suggested deployment:
+The app is designed so the UI never depends on raw LLM text. The generator returns a structured paper object with:
 
-- Frontend: Vercel.
-- Backend: Render/Railway/Fly.io.
-- MongoDB: MongoDB Atlas.
-- Redis: Upstash or Redis Cloud.
+- sections
+- questions
+- difficulty
+- marks
+- answer key
 
-Set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` on the frontend deployment to point to the hosted backend. Set `MONGODB_URI`, `REDIS_URL`, and `OPENAI_API_KEY` on the backend host.
+If `OPENAI_API_KEY` is missing, the backend uses a mock generator. This makes local review easier without blocking the whole workflow.
 
-## Checks
+## Verification
 
 ```bash
 npm run typecheck
 npm run build
 ```
 
-## Design Notes
+Both commands should pass before submission.
 
-The UI intentionally keeps the core Figma structure: left rail navigation, assignment cards, creation form, and a formal paper preview. Added details include generation progress, status badges, regenerate action, and difficulty tags so the assignment feels complete rather than just copied from a static mockup.
+## Deployment Plan
+
+Recommended setup:
+
+- Frontend: Vercel
+- Backend: Render, Railway, or Fly.io
+- Database: MongoDB Atlas
+- Redis: Upstash or Redis Cloud
+
+For deployment, set:
+
+- `NEXT_PUBLIC_API_URL`
+- `NEXT_PUBLIC_WS_URL`
+- `MONGODB_URI`
+- `REDIS_URL`
+- `OPENAI_API_KEY`
+
+## Future Improvements
+
+- Teacher login and saved classes
+- Better generated-output schema validation
+- Saved question-paper templates
+- PDF storage in cloud storage
+- Analytics for generated assignments
+- Role-based dashboard for multiple teachers
+
+## Author
+
+Built by Aditi Singh for the VedaAI Full Stack Engineering Assignment.
+
+- GitHub: [aditiiisinghh](https://github.com/aditiiisinghh)
+- LinkedIn: [Aditi Singh](https://www.linkedin.com/in/aditi-singh-59a7872b0)

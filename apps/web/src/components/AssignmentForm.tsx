@@ -22,14 +22,14 @@ const defaultQuestionTypes: QuestionConfig[] = [
 export function AssignmentForm({ onClose }: { onClose: () => void }) {
   const dispatch = useAppDispatch();
   const [draft, setDraft] = useState<AssignmentDraft>({
-    title: "Quiz on Electricity",
+    title: "Class 8 Science Practice Paper",
     subject: "Science",
     classLevel: "8th",
     schoolName: "Delhi Public School, Sector-4, Bokaro",
     dueDate: "",
     durationMinutes: 45,
     questionTypes: defaultQuestionTypes,
-    additionalInstructions: "Generate a balanced paper from electric current and electrolysis. Keep answers concise.",
+    additionalInstructions: "Focus on electric current, conductors, and electrolysis. Keep the language clear for class 8 students.",
     sourceText: ""
   });
   const [error, setError] = useState("");

@@ -52,8 +52,8 @@ export function PaperPreview() {
     <section className="previewPane">
       <div className="actionBar">
         <div>
-          <strong>Certainly, teacher! Here is your customized question paper.</strong>
-          <span>{assignment.subject} • Class {assignment.classLevel}</span>
+          <strong>Paper draft is ready for review.</strong>
+          <span>{assignment.subject} - Class {assignment.classLevel}</span>
         </div>
         <button onClick={() => downloadPaperPdf(paper)}><Download size={16} /> Download as PDF</button>
         <button
@@ -136,12 +136,12 @@ function GenerationState({ assignment }: { assignment: Assignment }) {
         <p>
           {assignment.status === "failed"
             ? "The queue reported a failure. Check API logs or Redis/Mongo connection."
-            : "The backend has accepted the request, placed it in BullMQ, and is processing it in the worker."}
+            : "The request is queued and the worker is preparing a structured paper from the blueprint."}
         </p>
         <div className="progressTrack">
           <span style={{ width: `${assignment.progress}%` }} />
         </div>
-        <small>{assignment.progress}% • {assignment.status}</small>
+        <small>{assignment.progress}% - {assignment.status}</small>
       </div>
     </section>
   );
