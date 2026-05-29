@@ -183,7 +183,5 @@ For deployment, set:
 
 ## Author
 
-Built by Aditi Singh for the VedaAI Full Stack Engineering Assignment.
-
 - GitHub: [aditiiisinghh](https://github.com/aditiiisinghh)
 - LinkedIn: [Aditi Singh](https://www.linkedin.com/in/aditi-singh-59a7872b0)
